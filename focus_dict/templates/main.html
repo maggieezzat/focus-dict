@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <link rel="icon" href="http://obj-cache.cloud.ruanbekker.com/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css"  href="/static/bootstrap.css"/>
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/3.2.1/css/font-awesome.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/static/awesome-bootstrap-checkbox.css"/>
+    
+    <title>Focus Dictionary </title>
+    <style>
+        * {
+          box-sizing: border-box;
+        }
+        /* Create three equal columns that floats next to each other */
+        .column {
+          float: left;
+          width: 33.33%;
+          padding: 40px;
+        }
+        /* Clear floats after the columns */
+        .row:after {
+          content: "";
+          display: table;
+          clear: both;
+        }
+        /* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 600px) {
+          .column {
+            width: 100%;
+          }
+        }
+        .column-sm {
+          float: left;
+          width: 50%;
+          padding: 2px;
+        } 
+        </style>
+</head>
+
+
+<body>
+    <div class="row">
+        
+
+        <div class="column">
+            <div style="background:transparent !important" class="jumbotron">
+                <div style="font-family: 'Times New Roman'">
+                    <p>
+                        <center>
+                            <br/> <br/> 
+                            {% if res_word1 %}
+                            <h3>{{ res_word1['total'] }} results found for <em>"{{ res_word1['SearchTerm'] }}" </em> </h3>
+                            {% else %}
+                            <h3>0 results found for " "</h3>
+                            {% endif %}
+                        </center>
+                        </p>
+                </div>
+            </div>
+            <br/>
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th>Word</th>
+                    <th>Line</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if res_word1 %}
+                    {% for hit in res_word1['hits'] %}
+                    <tr>
+                    <th scope="row">{{ res_word1['SearchTerm'] }}</th>
+                    <td>{{ hit }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="column">
+
+            <div style="background:transparent !important" class="jumbotron">
+                <div style="font-family: 'Times New Roman'">        
+                    <p>
+                    <center>
+                    <font size="6" style="color:rgb(239,127,26);"> FOCUS DICTIONARY </font>
+                    </center>
+                    </p>
+                </div>
+
+            <div class="container">
+               
+
+                    <div class="row">
+                    
+                        <div class="column-sm">
+                            <form action="/search" method="post">
+                                <div class="input-group">
+                                <input type="text" class="form-control input-lg" name="search-left" placeholder="بحث" autofocus>
+                                <div class="input-group-btn">
+                                <button class="btn btn-primary btn-lg" type="submit">
+                                <i class="glyphicon glyphicon-search"></i>
+                                </button>
+                                </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="column-sm">
+                            <form action="/search" method="post">
+                                <div class="input-group">
+                                <input type="text" class="form-control input-lg" name="search-right" placeholder="بحث" autofocus>
+                                <div class="input-group-btn">
+                                <button class="btn btn-primary btn-lg" type="submit">
+                                <i class="glyphicon glyphicon-search"></i>
+                                </button>
+                                </div>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                    
+
+                </div>
+            </div>  
+            <center>{{ pagination.links }}</center>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>تسلسل</th>
+                            <th>دمج</th>
+                            <th>حذف</th>
+                            <th>كلمة 1</th>
+                            <th>كلمة 2</th>
+                            <th>حذف</th>
+                            <th>دمج</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pair in pairs %}
+                        <tr>
+                            <td>{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                            <td>
+                                <form action="/save" method="post">
+                                    <div class="checkbox checkbox-primary">
+                                        <input type='hidden' name="word1_merge" value="{{ pair['word1'] }}">
+                                        {% if pair['word1_merge'] == true %}
+                                        <input type="checkbox" class="clickable-button" id="word1_merge" name="word1_merge" value="{{ pair['word1'] }}" onclick="this.form.submit()" checked>
+                                        {% else %}
+                                        <input type="checkbox" class="clickable-button" id="word1_merge" name="word1_merge" value="{{ pair['word1'] }}" onclick="this.form.submit()">
+                                        {% endif %}
+                                        <label></label>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>
+                                <form action="/save" method="post">
+                                    <div class="checkbox checkbox-danger">
+                                        <input type='hidden' name="word1_delete" value="{{ pair['word1'] }}">
+                                        {% if pair['word1_delete'] == true %}
+                                        <input type="checkbox" data-onstyle="danger" id="word1_delete" name="word1_delete" value="{{ pair['word1'] }}" onclick="this.form.submit()" checked>
+                                        {% else %}
+                                        <input type="checkbox" data-onstyle="danger" id="word1_delete" name="word1_delete" value="{{ pair['word1'] }}" onclick="this.form.submit()">
+                                        {% endif %}
+                                        <label></label>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>
+                                <form  action="/batch" method="post">
+                                    <input type="submit" class="form-control input-lg" name="word1" value="{{ pair['word1'] }}" />
+                                </form>
+                                
+                            </td>
+                            <td>
+                                <form action="/batch" method="post">
+                                    <input type="submit" class="form-control input-lg" name="word2" value="{{ pair['word2'] }}" />
+                                </form>
+                                
+                            </td>
+                            <td>
+                                <form action="/save" method="post">
+                                    <div class="checkbox checkbox-danger">
+                                        <input type='hidden' name="word2_delete" value="{{ pair['word2'] }}">
+                                        {% if pair['word2_delete'] == true %}
+                                        <input type="checkbox" class="clickable-button" id="word2_delete" name="word2_delete" value="{{ pair['word2'] }}" onclick="this.form.submit()" checked>
+                                        {% else %}
+                                        <input type="checkbox" class="clickable-button" id="word2_delete" name="word2_delete" value="{{ pair['word2'] }}" onclick="this.form.submit()">
+                                        {% endif %}
+                                        <label></label>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>
+                                <form action="/save" method="post">
+                                    <div class="checkbox checkbox-primary">
+                                        <input type='hidden' name="word2_merge" value="{{ pair['word2'] }}">
+                                        {% if pair['word2_merge'] == true %}
+                                        <input type="checkbox" class="clickable-button" id="word2_merge" name="word2_merge" value="{{ pair['word2'] }}" onclick="this.form.submit()" checked>
+                                        {% else %}
+                                        <input type="checkbox" class="clickable-button" id="word2_merge" name="word2_merge" value="{{ pair['word2'] }}" onclick="this.form.submit()">
+                                        {% endif %}
+                                        <label></label>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <center>{{ pagination.links }}</center>
+        </div>
+
+
+        <div class="column">
+            <div style="background:transparent !important" class="jumbotron">
+                <div style="font-family: 'Times New Roman'">
+                    <p>
+                        <center>
+                            <br/> <br/> 
+                            {% if res_word2 %}
+                            <h3>{{ res_word2['total'] }} results found for <em>"{{ res_word2['SearchTerm'] }}" </em> </h3>
+                            {% else %}
+                            <h3>0 results found for " "</h3>
+                            {% endif %}
+                        </center>
+                        </p>
+                </div>
+            </div>
+            <br/>
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th>Word</th>
+                    <th>Line</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if res_word2 %}
+                    {% for hit in res_word2['hits'] %}
+                    <tr>
+                    <th scope="row">{{ res_word2['SearchTerm'] }}</th>
+                    <td>{{ hit }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+</body>
+
+
+</html>

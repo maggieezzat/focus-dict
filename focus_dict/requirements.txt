@@ -1,0 +1,8 @@
+flask
+gunicorn
+Jinja2
+requests
+Werkzeug
+elasticsearch
+flask_paginate
+flask_mongoengine

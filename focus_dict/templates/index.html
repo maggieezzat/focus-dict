@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <link rel="icon" href="http://obj-cache.cloud.ruanbekker.com/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css"  href="/static/bootstrap.css"/>
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/3.2.1/css/font-awesome.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/static/awesome-bootstrap-checkbox.css"/>
+    
+    <title>Focus Dictionary </title>
+</head>
+
+<body>
+    <div class="container">
+        <div style="background:transparent !important" class="jumbotron">
+            <div style="font-family: 'Times New Roman'">        
+                <p>
+                <center>
+                <font size="6" style="color:rgb(239,127,26);"> FOCUS DICTIONARY </font>
+                </center>
+                </p>
+            </div>
+        <br/>
+        <table class="table">
+            <thead>
+                <tr>
+                <th>تسلسل</th>
+                <th>قاعدة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if databases %}
+                {% for db in databases %}
+                <tr>
+                    <th scope="row">{{ db[0] }}</th>
+                    <td>
+                        <form action="index" method="post">
+                            <input type="submit" class="form-control input-lg" name="{{ db[1] }}" value="{{ db[2] }}" />
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+    </div>
+</body>
+
+</html>
