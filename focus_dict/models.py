@@ -1,6 +1,7 @@
 import mongoengine as db
 
 class Pair(db.Document):
+    meta = {"db_alias":"default", 'collection':'pair'}
     index = db.IntField(required=True)
     word1 = db.StringField(required=True)
     word2 = db.StringField(required=True)

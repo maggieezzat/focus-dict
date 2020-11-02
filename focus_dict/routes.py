@@ -3,10 +3,9 @@ from flask_paginate import Pagination, get_page_args, get_page_parameter
 from elasticsearch import Elasticsearch
 from focus_dict import app
 from focus_dict.utils import get_docs
-from focus_dict.models import Pair
 import math
 import os
-from mongoengine import connect, disconnect_all
+from flask_pymongo import PyMongo
 
 
 
@@ -20,6 +19,22 @@ def gen_positions(total):
         page_position[i] = pos
 
     return page_position
+
+def import_collections(path="focus_dict/static/collections.txt"):
+    arr = []
+    i=1
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            clean = line.strip().split("-")
+            if "None" in clean:
+                clean = "الف مد" + " " + "         مجموعة " + clean[2]
+            else:
+                clean = clean[0] + " " + clean[1] + " " + "         مجموعة " + clean[2]
+            t = (i, line.strip(), clean)
+            arr.append(t)
+            i+=1
+    return arr
+
 
 
 
@@ -41,33 +56,23 @@ def get_page_pairs(offset=0, per_page=10):
     return page_pairs
 
 
-def import_dbs(path="focus_dict/static/databases.txt"):
-    arr = []
-    i=1
-    with open(path, 'r', encoding='utf-8') as f:
-        for line in f:
-            clean = line.strip().split("-")
-            if "None" in clean:
-                clean = "الف مد" + " " + "         مجموعة " + clean[2]
-            else:
-                clean = clean[0] + " " + clean[1] + " " + "         مجموعة " + clean[2]
-            t = (i, line.strip(), clean)
-            arr.append(t)
-            i+=1
-    return arr
 
-
-
+es = Elasticsearch("127.0.0.1", port=9200)
 INDEX_NAME = "corpus_merged"
+
 search_left = {}
 search_right = {}
 current_page = 1
+#total = len(Pair.objects())
+#page_position = gen_positions(total)
 total = 0
 page_position = []
-es = Elasticsearch("127.0.0.1", port=9200)
-databases = import_dbs()
-disconnect_all()
-conn = ""
+collections = import_collections()
+#conn = ""
+pairs = []
+current_coll = ""
+mongo = PyMongo(app)
+
 
 #when a web browser requests either of these two URLs, Flask is going to invoke this function 
 # and pass the return value of it back to the browser as a response
@@ -75,21 +80,28 @@ conn = ""
 @app.route('/index', methods=['GET', 'POST'])
 def index():
 
+    global search_left
+    global search_right
+    global current_page
+    global total
+    global page_position
+    global databases
+    global pairs
+    global current_coll
+
     req = request.form
 
     if not req:
         return render_template('index.html', databases=databases)
     
     for k,v in req.items():
-        global total
-        global page_position
-        global conn
-        
-        disconnect_all()
-        conn = k
-        connect(k, host='localhost', port=27017)
-        total = len(Pair.objects())
+        current_coll = k
+        pairs = mongo.db[current_coll].find()
+        total = len(pairs)
         page_position = gen_positions(total)
+        #print("#############################")
+        #print()
+        #print("#############################")
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         current_page = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
@@ -102,14 +114,22 @@ def index():
 @app.route('/batch', methods=['GET', 'POST'])
 def batch():
 
+    global search_left
+    global search_right
+    global current_page
+    global total
+    global page_position
+    global databases
+    global pairs 
+    global current_coll
+
+    #disconnect_all()
+    #connect(conn)
+    #connect(conn, alias='default', host='localhost', port=27017)
+    #pairs = mongo.db[k].find()
     req = request.form
 
-    global current_page
-    global search_right
-    global search_left
-    global conn
-
-    connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         current_page = page
@@ -119,12 +139,25 @@ def batch():
 
     pair = {}
     for k,v in req.items():
+        print("***********************************")
+        print(k)
+        print(v)
+        print("***********************************")
         if k == 'word1':
-            pair = Pair.objects(word1=v).first()
+            #pair = Pair.objects(word1=v).first()
+            pair = mongo.db[current_coll].find({"word1": v})
+            print(pair)
         elif k == 'word2':
-            pair = Pair.objects(word2=v).first()
+            #pair = Pair.objects(word2=v).first()
+            pair = mongo.db[current_coll].find({"word2": v})
+            print(pair)
+
 
     ind = pair['index']
+    print("***********************************")
+    print(ind)
+    print(len(page_position))
+    print("***********************************")
     page = page_position[ind]
     current_page = page
     
@@ -160,14 +193,20 @@ def batch():
 @app.route('/search', methods=['GET','POST'])
 def req_search():
 
+    global search_left
+    global search_right
+    global current_page
+    global total
+    global page_position
+    global databases
+    #global conn 
+
+    #disconnect_all()
+    #connect(conn)
+    #connect(conn, alias='default', host='localhost', port=27017)
     req = request.form
 
-    global current_page
-    global search_right
-    global search_left
-    global conn
-
-    connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
     
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
@@ -227,11 +266,18 @@ def req_search():
 
 @app.route('/save', methods=['GET','POST'])
 def save_state():
-
+    
+    global search_left
+    global search_right
     global current_page
-    global conn
+    global total
+    global page_position
+    global databases
+    #global conn 
 
-    connect(conn)
+    #disconnect_all()
+    #connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
 
     req = request.form
 

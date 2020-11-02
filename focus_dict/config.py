@@ -1,7 +1,9 @@
 class Config:
     DEBUG = True
-    MONGODB_SETTINGS = {
-    'host': 'localhost',
-    'port': 27017
-    }
+    MONGO_URI = "mongodb://localhost:27017/mydb"
+    #MONGODB_SETTINGS = {
+    #'db': 'ؤ-ء-1',
+    #'host': 'localhost',
+    #'port': 27017
+    #}
   
