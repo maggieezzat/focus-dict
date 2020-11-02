@@ -6,3 +6,5 @@ Werkzeug
 elasticsearch
 flask_paginate
 flask_mongoengine
+pymongo
+Flask-PyMongo

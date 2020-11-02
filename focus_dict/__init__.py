@@ -1,13 +1,13 @@
-from flask import Flask
+from flask import Flask, session
+from flask_session import Session
 from focus_dict.config import Config
-#from flask_mongoengine import MongoEngine
 from flask_pymongo import PyMongo
+import os
 
 app = Flask(__name__, static_url_path="/static")
+app.secret_key = os.urandom(24)
 app.config.from_object(Config)
-
-#db = MongoEngine()
-#db.init_app(app)
+Session(app)
 mongo = PyMongo(app)
 
 
