@@ -7,6 +7,7 @@ from focus_dict.models import Pair
 import math
 import os
 from mongoengine import connect, disconnect_all
+from mongoengine.connection import get_db
 
 
 
@@ -62,11 +63,10 @@ INDEX_NAME = "corpus_merged"
 search_left = {}
 search_right = {}
 current_page = 1
-total = 0
-page_position = []
+total = len(Pair.objects())
+page_position = gen_positions(total)
 es = Elasticsearch("127.0.0.1", port=9200)
 databases = import_dbs()
-disconnect_all()
 conn = ""
 
 #when a web browser requests either of these two URLs, Flask is going to invoke this function 
@@ -84,12 +84,20 @@ def index():
         global total
         global page_position
         global conn
+        global search_left
+        global search_right
+        global current_page
         
         disconnect_all()
         conn = k
-        connect(k, host='localhost', port=27017)
+        connect(conn, alias='default', host='localhost', port=27017)
         total = len(Pair.objects())
         page_position = gen_positions(total)
+        print("#############################")
+        print(page_position)
+        print(len(page_position))
+        print(total)
+        print("#############################")
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         current_page = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
@@ -105,11 +113,12 @@ def batch():
     req = request.form
 
     global current_page
+    global page_position
     global search_right
     global search_left
     global conn
 
-    connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         current_page = page
@@ -119,12 +128,25 @@ def batch():
 
     pair = {}
     for k,v in req.items():
+        print("***********************************")
+        print(k)
+        print(v)
+        db = get_db()
+        print("Database name:", db.name)
+        print("***********************************")
         if k == 'word1':
             pair = Pair.objects(word1=v).first()
+            print(pair)
         elif k == 'word2':
             pair = Pair.objects(word2=v).first()
+            print(pair)
+
 
     ind = pair['index']
+    print("***********************************")
+    print(ind)
+    print(len(page_position))
+    print("***********************************")
     page = page_position[ind]
     current_page = page
     
@@ -163,11 +185,12 @@ def req_search():
     req = request.form
 
     global current_page
+    global page_position
     global search_right
     global search_left
     global conn
 
-    connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
     
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
@@ -231,7 +254,7 @@ def save_state():
     global current_page
     global conn
 
-    connect(conn)
+    #connect(conn,  alias='default', host='localhost', port=27017)
 
     req = request.form
 
