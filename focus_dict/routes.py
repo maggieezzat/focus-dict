@@ -64,7 +64,7 @@ search_right = {}
 current_page = 1
 total = 0
 page_position = []
-#es = Elasticsearch("127.0.0.1", port=9200)
+es = Elasticsearch("127.0.0.1", port=9200)
 databases = import_dbs()
 disconnect_all()
 
