@@ -64,16 +64,9 @@ if __name__=='__main__':
     if not check_if_index_exists(es, INDEX_NAME):
         start = time.time()
         create_index(es, INDEX_NAME)
-        insert_corpus_es(es, INDEX_NAME, "../../../language_model/merged_corpus/data/corpus_merged_test.txt")
+        #insert_corpus_es(es, INDEX_NAME, "/media/corpus_merged_clean.txt")
         end = time.time()
         hours, rem = divmod(end-start, 3600)
         minutes, seconds = divmod(rem, 60)
         print("Done Creating Indices. Total time:  {:0>2}:{:0>2}:{:0>2}".format(int(hours),int(minutes),int(seconds)))
 
-    
-    
-    start = time.time()
-    for i in get_docs(es, INDEX_NAME, "محدش"):
-        print(i)
-    end = time.time()
-    print(end-start)
