@@ -67,7 +67,7 @@ page_position = []
 es = Elasticsearch("127.0.0.1", port=9200)
 databases = import_dbs()
 disconnect_all()
-
+conn = ""
 
 #when a web browser requests either of these two URLs, Flask is going to invoke this function 
 # and pass the return value of it back to the browser as a response
@@ -83,8 +83,11 @@ def index():
     for k,v in req.items():
         global total
         global page_position
+        global conn
+        
         disconnect_all()
-        connect(k)
+        conn = k
+        connect(k, host='localhost', port=27017)
         total = len(Pair.objects())
         page_position = gen_positions(total)
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
@@ -104,7 +107,9 @@ def batch():
     global current_page
     global search_right
     global search_left
-    
+    global conn
+
+    connect(conn)
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         current_page = page
@@ -160,6 +165,9 @@ def req_search():
     global current_page
     global search_right
     global search_left
+    global conn
+
+    connect(conn)
     
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
@@ -221,6 +229,9 @@ def req_search():
 def save_state():
 
     global current_page
+    global conn
+
+    connect(conn)
 
     req = request.form
 
