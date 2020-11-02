@@ -127,7 +127,6 @@ def batch():
 
 
     ind = pair['index']
-    #page = page_position[ind]
     page = session['page_position'][ind]
     session['current_page'] = page
 
@@ -139,16 +138,16 @@ def batch():
 
     res_word1 = {}
     res_word1['SearchTerm'] = pair['word1']
-    #sents_word1 = get_docs(es, INDEX_NAME, pair['word1'])
-    sents_word1 = []
+    sents_word1 = get_docs(es, INDEX_NAME, pair['word1'])
+    #sents_word1 = []
     sents_word1 = sents_word1[:100]
     res_word1['hits'] = sents_word1
     res_word1['total'] = len(sents_word1)
 
     res_word2 = {}
     res_word2['SearchTerm'] = pair['word2']
-    #sents_word2 = get_docs(es, INDEX_NAME, pair['word2'])
-    sents_word2 = []
+    sents_word2 = get_docs(es, INDEX_NAME, pair['word2'])
+    #sents_word2 = []
     sents_word2 = sents_word2[:100]
     res_word2['hits'] = sents_word2    
     res_word2['total'] = len(sents_word2)
@@ -176,7 +175,6 @@ def req_search():
         return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
 
     
-    #page = current_page
     page = session['current_page']
     offset = page*10 - 10
     per_page = 10
@@ -193,8 +191,8 @@ def req_search():
             res_word2 = session['search_right']
 
             if len(search_term) > 0:
-                #sents = get_docs(es, INDEX_NAME, search_term)
-                sents = []
+                sents = get_docs(es, INDEX_NAME, search_term)
+                #sents = []
                 sents = sents[:100]
                 res_word1['SearchTerm'] = search_term
             else:
@@ -209,8 +207,8 @@ def req_search():
             res_word1 = session['search_left']
             res_word2 = {}
             if len(search_term) > 0:
-                #sents = get_docs(es, INDEX_NAME, search_term)
-                sents = []
+                sents = get_docs(es, INDEX_NAME, search_term)
+                #sents = []
                 sents = sents[:100]
                 res_word2['SearchTerm'] = search_term
             else:
