@@ -36,7 +36,7 @@ def get_docs(es, index_name, term, limit=100):
     #return outcomes
         
 def bulk_insert(es,docs):
-    helpers.bulk(es,actions=docs)
+    helpers.bulk(es,actions=docs, request_timeout=200)
 
 def insert_corpus_es(es, index_name, corpus_path):
     with open(corpus_path,'r', encoding='utf-8') as f:
@@ -60,13 +60,13 @@ if __name__=='__main__':
     
     INDEX_NAME = "corpus_merged"
     es = init_esServer('localhost',9200)
-    #delete_index(es, INDEX_NAME)
-    if not check_if_index_exists(es, INDEX_NAME):
-        start = time.time()
-        create_index(es, INDEX_NAME)
-        #insert_corpus_es(es, INDEX_NAME, "/media/corpus_merged_clean.txt")
-        end = time.time()
-        hours, rem = divmod(end-start, 3600)
-        minutes, seconds = divmod(rem, 60)
-        print("Done Creating Indices. Total time:  {:0>2}:{:0>2}:{:0>2}".format(int(hours),int(minutes),int(seconds)))
+    delete_index(es, INDEX_NAME)
+    #if not check_if_index_exists(es, INDEX_NAME):
+    start = time.time()
+    create_index(es, INDEX_NAME)
+    insert_corpus_es(es, INDEX_NAME, "/media/corpus_merged_clean.txt")
+    end = time.time()
+    hours, rem = divmod(end-start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print("Done Creating Indices. Total time:  {:0>2}:{:0>2}:{:0>2}".format(int(hours),int(minutes),int(seconds)))
 
