@@ -31,7 +31,7 @@ def import_collections(path="focus_dict/static/collections.txt"):
                 clean = "الف مد" + " " + "         مجموعة " + clean[2]
             else:
                 clean = clean[0] + " " + clean[1] + " " + "         مجموعة " + clean[2]
-            t = (i, line.strip(), clean)
+            t = (i, line.strip(), clean, 0, 0, 0)
             arr.append(t)
             i+=1
     
@@ -75,6 +75,16 @@ def index():
     req = request.form
 
     session['collections'] = import_collections()
+    for i in range(len(session['collections'])):
+        coll = session['collections'][i]
+        coll = coll[1]
+        agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
+        val = list(mongo.db[coll].aggregate(agr))
+        val = int(val[0]['all'])
+        total = mongo.db[coll].find().count() 
+        per = str(int((val/total)*100))+"%"
+        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
+    
     session['current_page'] = 1
     session['search_left'] = {}
     session['search_right'] = {}
@@ -99,6 +109,22 @@ def index():
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
         return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+
+
+
+@app.route('/back', methods=['GET', 'POST'])
+def back():
+    for i in range(len(session['collections'])):
+        coll = session['collections'][i]
+        coll = coll[1]
+        agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
+        val = list(mongo.db[coll].aggregate(agr))
+        val = int(val[0]['all'])
+        total = mongo.db[coll].find().count() 
+        per = str(int((val/total)*100))+"%"
+        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
+    
+    return render_template('index.html', databases=session['collections'])
 
 
 
@@ -139,7 +165,6 @@ def batch():
     res_word1 = {}
     res_word1['SearchTerm'] = pair['word1']
     sents_word1 = get_docs(es, INDEX_NAME, pair['word1'])
-    #sents_word1 = []
     sents_word1 = sents_word1[:100]
     res_word1['hits'] = sents_word1
     res_word1['total'] = len(sents_word1)
@@ -147,7 +172,6 @@ def batch():
     res_word2 = {}
     res_word2['SearchTerm'] = pair['word2']
     sents_word2 = get_docs(es, INDEX_NAME, pair['word2'])
-    #sents_word2 = []
     sents_word2 = sents_word2[:100]
     res_word2['hits'] = sents_word2    
     res_word2['total'] = len(sents_word2)
@@ -192,7 +216,6 @@ def req_search():
 
             if len(search_term) > 0:
                 sents = get_docs(es, INDEX_NAME, search_term)
-                #sents = []
                 sents = sents[:100]
                 res_word1['SearchTerm'] = search_term
             else:
@@ -208,7 +231,6 @@ def req_search():
             res_word2 = {}
             if len(search_term) > 0:
                 sents = get_docs(es, INDEX_NAME, search_term)
-                #sents = []
                 sents = sents[:100]
                 res_word2['SearchTerm'] = search_term
             else:
@@ -243,6 +265,8 @@ def save_state():
         if word_order == "word1":
             pair = mongo.db[current_coll].find_one({"word1": word})
             filter = {"word1": word}
+            newvalues = { "$set": { 'touched': 1} } 
+            result =  mongo.db[current_coll].update_one(filter, newvalues)
             if key == 'word1_merge':
                 state = pair['word1_merge']
                 
@@ -263,6 +287,8 @@ def save_state():
         elif word_order == "word2":
             pair = mongo.db[current_coll].find_one({"word2": word})
             filter = {"word2": word}
+            newvalues = { "$set": { 'touched': 1} } 
+            result =  mongo.db[current_coll].update_one(filter, newvalues)
             if key == 'word2_merge':
                 state = pair['word2_merge']
                 if state == False:
