@@ -45,6 +45,8 @@ def import_collections(path="focus_dict/static/collections.txt"):
 def get_page_pairs(offset=0, per_page=10):
     
     end = offset+per_page
+    if end > session['total']:
+        end = session['total']
     current_coll = session['current_coll']
     
     l = []
@@ -69,8 +71,31 @@ mongo = PyMongo(app)
 #when a web browser requests either of these two URLs, Flask is going to invoke this function 
 # and pass the return value of it back to the browser as a response
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/index', methods=['GET', 'POST'])
 def index():
+
+    session['collections'] = import_collections()
+    for i in range(len(session['collections'])):
+        coll = session['collections'][i]
+        coll = coll[1]
+        agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
+        val = list(mongo.db[coll].aggregate(agr))
+        val = int(val[0]['all'])
+        total = mongo.db[coll].find().count() 
+        per = str(int((val/total)*100))+"%"
+        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
+    
+    session['current_page'] = 1
+    session['search_left'] = {}
+    session['search_right'] = {}
+
+    return render_template('index.html', databases=session['collections'])
+
+
+
+
+
+@app.route('/main', methods=['GET', 'POST'])
+def main():
 
     req = request.form
 
@@ -90,7 +115,12 @@ def index():
     session['search_right'] = {}
 
     if not req:
-        return render_template('index.html', databases=session['collections'])
+        page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+        session['current_page'] = page
+        pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
+        pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+
     
     for k,v in req.items():
         session['current_coll'] = k
