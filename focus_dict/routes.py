@@ -34,7 +34,7 @@ def import_collections(path="focus_dict/static/collections.txt"):
             if "None" in clean:
                 clean = "الف مد" + " " + "         مجموعة " + clean[2]
             else:
-                clean = clean[0] + " " + clean[1] + " " + "         مجموعة " + clean[2]
+                clean = clean[0] + " - " + clean[1] + " " + "         مجموعة " + clean[2]
             t = (i, name.strip(), clean, 0, int(size), 0)
             arr.append(t)
             i+=1
