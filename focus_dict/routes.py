@@ -21,23 +21,25 @@ def gen_positions(total):
     session['page_position'] = page_position
     return page_position
 
+
+
 def import_collections(path="focus_dict/static/collections.txt"):
     arr = []
     i=1
     with open(path, 'r', encoding='utf-8') as f:
         for line in f:
-            clean = line.strip().split("-")
+            size = line.strip().split(" ")[1]
+            name = line.strip().split(" ")[0]
+            clean = name.strip().split("-")
             if "None" in clean:
                 clean = "الف مد" + " " + "         مجموعة " + clean[2]
             else:
                 clean = clean[0] + " " + clean[1] + " " + "         مجموعة " + clean[2]
-            t = (i, line.strip(), clean, 0, 0, 0)
+            t = (i, name.strip(), clean, 0, int(size), 0)
             arr.append(t)
             i+=1
     
-    session['collections'] = arr
     return arr
-
 
 
 
@@ -76,13 +78,12 @@ def index():
     session['collections'] = import_collections()
     for i in range(len(session['collections'])):
         coll = session['collections'][i]
-        coll = coll[1]
         agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
-        val = list(mongo.db[coll].aggregate(agr))
+        val = list(mongo.db[coll[1]].aggregate(agr))
         val = int(val[0]['all'])
-        total = mongo.db[coll].find().count() 
+        total = int(coll[4])
         per = str(int((val/total)*100))+"%"
-        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
+        session['collections'][i] = (coll[0], coll[1], coll[2], val, total, per)
     
     session['current_page'] = 1
     session['search_left'] = {}
@@ -99,46 +100,26 @@ def main():
 
     req = request.form
 
-    session['collections'] = import_collections()
-    for i in range(len(session['collections'])):
-        coll = session['collections'][i]
-        coll = coll[1]
-        agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
-        val = list(mongo.db[coll].aggregate(agr))
-        val = int(val[0]['all'])
-        total = mongo.db[coll].find().count() 
-        per = str(int((val/total)*100))+"%"
-        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
-    
-    session['current_page'] = 1
-    session['search_left'] = {}
-    session['search_right'] = {}
-
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         session['current_page'] = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+        coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=coll, pairs=pagination_pairs, pagination=pagination)
 
     
     for k,v in req.items():
         session['current_coll'] = k
-        current_coll = session['current_coll']
-        cursor = mongo.db[current_coll].find({})
-        pairs = []
-        for document in cursor:
-          pairs.append(document)
-
-        session['pairs'] = pairs
-
+        session['pairs'] = list(mongo.db[k].find({}))
         session['total'] = len(session['pairs'])
         session['page_position']  = gen_positions(session['total'])
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
         session['current_page'] = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+        coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=coll, pairs=pagination_pairs, pagination=pagination)
 
 
 
@@ -146,13 +127,16 @@ def main():
 def back():
     for i in range(len(session['collections'])):
         coll = session['collections'][i]
-        coll = coll[1]
         agr = [ {'$group': {'_id': 1, 'all': { '$sum': '$touched' } } } ]
-        val = list(mongo.db[coll].aggregate(agr))
+        val = list(mongo.db[coll[1]].aggregate(agr))
         val = int(val[0]['all'])
-        total = mongo.db[coll].find().count() 
+        total = int(coll[4])
         per = str(int((val/total)*100))+"%"
-        session['collections'][i] = (session['collections'][i][0], session['collections'][i][1], session['collections'][i][2], val, total, per)
+        session['collections'][i] = (coll[0], coll[1], coll[2], val, total, per)
+    
+    session['current_page'] = 1
+    session['search_left'] = {}
+    session['search_right'] = {}
     
     return render_template('index.html', databases=session['collections'])
 
@@ -169,10 +153,11 @@ def batch():
 
     if not req:
         page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-        current_page = page
+        session['current_page'] = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+        coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=scoll, pairs=pagination_pairs, pagination=pagination)
 
     pair = {}
     for k,v in req.items():
@@ -191,32 +176,33 @@ def batch():
     pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
     pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
 
-
     res_word1 = {}
     res_word1['SearchTerm'] = pair['word1']
     sents_word1 = get_docs(es, INDEX_NAME, pair['word1'])
-    sents_word1 = sents_word1[:100]
-    res_word1['hits'] = sents_word1
     res_word1['total'] = len(sents_word1)
+    sents_word1 = [i for i in sents_word1 if len(i) <=500]
+    sents_word1 = [(i.split(pair['word1'], 1)[0], pair['word1'], i.split(pair['word1'], 1)[1]) for i in sents_word1]
+
+    res_word1['hits'] = sents_word1
 
     res_word2 = {}
     res_word2['SearchTerm'] = pair['word2']
-    sents_word2 = get_docs(es, INDEX_NAME, pair['word2'])
-    sents_word2 = sents_word2[:100]
-    res_word2['hits'] = sents_word2    
+    sents_word2 = get_docs(es, INDEX_NAME, pair['word2'])   
     res_word2['total'] = len(sents_word2)
+    sents_word2 = [i for i in sents_word2 if len(i) <=500]
+    sents_word2 = [(i.split(pair['word2'], 1)[0], pair['word2'], i.split(pair['word2'], 1)[1]) for i in sents_word2]
 
+    res_word2['hits'] = sents_word2 
     session['search_left'] = res_word1
     session['search_right'] = res_word2
 
-    return render_template('main.html', res_word1=res_word1, res_word2=res_word2, pairs=pagination_pairs, pagination=pagination)
+    coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+    return render_template('main.html', res_word1=res_word1, res_word2=res_word2, coll=coll, pairs=pagination_pairs, pagination=pagination)
 
 
 
 @app.route('/search', methods=['GET','POST'])
 def req_search():
-
-    current_coll = session['current_coll']
 
     req = request.form
 
@@ -226,7 +212,8 @@ def req_search():
         session['current_page'] = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+        coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=coll, pairs=pagination_pairs, pagination=pagination)
 
     
     page = session['current_page']
@@ -246,14 +233,16 @@ def req_search():
 
             if len(search_term) > 0:
                 sents = get_docs(es, INDEX_NAME, search_term)
-                sents = sents[:100]
                 res_word1['SearchTerm'] = search_term
             else:
                 sents = []
                 res_word1['SearchTerm'] = " "
             
-            res_word1['hits'] = sents
             res_word1['total'] = len(sents) 
+            sents = [i for i in sents if len(i) <=500]
+            sents = [(i.split(search_term, 1)[0], search_term, i.split(search_term, 1)[1]) for i in sents]
+
+            res_word1['hits'] = sents
             session['search_left'] = res_word1
         
         elif k == 'search-right':
@@ -261,17 +250,19 @@ def req_search():
             res_word2 = {}
             if len(search_term) > 0:
                 sents = get_docs(es, INDEX_NAME, search_term)
-                sents = sents[:100]
                 res_word2['SearchTerm'] = search_term
             else:
                 sents =[]
                 res_word2['SearchTerm']=" "
-            res_word2['hits'] = sents
+            
             res_word2['total'] = len(sents)
+            sents = [i for i in sents if len(i) <=500]
+            sents = [(i.split(search_term, 1)[0], search_term, i.split(search_term, 1)[1]) for i in sents]
+            res_word2['hits'] = sents 
             session['search_right'] = res_word2
     
-
-    return render_template('main.html', res_word1=res_word1, res_word2=res_word2, pairs=pagination_pairs, pagination=pagination)
+    coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+    return render_template('main.html', res_word1=res_word1, res_word2=res_word2, coll=coll, pairs=pagination_pairs, pagination=pagination)
 
 
 
@@ -287,7 +278,8 @@ def save_state():
         session['current_page'] = page
         pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
         pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+        coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+        return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=coll, pairs=pagination_pairs, pagination=pagination)
 
 
     for key, word in req.items():
@@ -295,45 +287,41 @@ def save_state():
         if word_order == "word1":
             pair = mongo.db[current_coll].find_one({"word1": word})
             filter = {"word1": word}
-            newvalues = { "$set": { 'touched': 1} } 
-            result =  mongo.db[current_coll].update_one(filter, newvalues)
             if key == 'word1_merge':
                 state = pair['word1_merge']
                 
                 if state == False:
-                    newvalues = { "$set": { 'word1_merge': True, "word1_delete":False } } 
+                    newvalues = { "$set": { 'word1_merge': True, "word1_delete":False, 'touched': 1 } } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
                 else:
-                    newvalues = { "$set": { 'word1_merge': False} }
+                    newvalues = { "$set": { 'word1_merge': False, 'touched': 1} }
                     result =  mongo.db[current_coll].update_one(filter, newvalues)           
             elif key == 'word1_delete':
                 state = pair['word1_delete']
                 if state == False:
-                    newvalues = { "$set": { 'word1_delete': True, "word1_merge":False } } 
+                    newvalues = { "$set": { 'word1_delete': True, "word1_merge":False , 'touched': 1} } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
                 else:
-                    newvalues = { "$set": { "word1_delete":False } } 
+                    newvalues = { "$set": { "word1_delete":False , 'touched': 1} } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
         elif word_order == "word2":
             pair = mongo.db[current_coll].find_one({"word2": word})
             filter = {"word2": word}
-            newvalues = { "$set": { 'touched': 1} } 
-            result =  mongo.db[current_coll].update_one(filter, newvalues)
             if key == 'word2_merge':
                 state = pair['word2_merge']
                 if state == False:
-                    newvalues = { "$set": { 'word2_merge': True, "word2_delete":False } } 
+                    newvalues = { "$set": { 'word2_merge': True, "word2_delete":False, 'touched': 1 } } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
                 else:
-                    newvalues = { "$set": { 'word2_merge': False } } 
+                    newvalues = { "$set": { 'word2_merge': False, 'touched': 1 } } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
             elif key == 'word2_delete':
                 state = pair['word2_delete']
                 if state == False:
-                    newvalues = { "$set": { 'word2_delete': True, "word2_merge":False } } 
+                    newvalues = { "$set": { 'word2_delete': True, "word2_merge":False, 'touched': 1 } } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
                 else:
-                    newvalues = { "$set": { "word2_delete":False } } 
+                    newvalues = { "$set": { "word2_delete":False, 'touched': 1 } } 
                     result =  mongo.db[current_coll].update_one(filter, newvalues)
         
     
@@ -342,4 +330,5 @@ def save_state():
     per_page = 10
     pagination_pairs = get_page_pairs(offset=offset, per_page=per_page)
     pagination = Pagination(page=page, per_page=per_page, total=session['total'], css_framework='bootstrap4')
-    return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], pairs=pagination_pairs, pagination=pagination)
+    coll=session['current_coll'].split("-")[0] + " - " + session['current_coll'].split("-")[1]
+    return render_template('main.html', res_word1=session['search_left'], res_word2=session['search_right'], coll=coll, pairs=pagination_pairs, pagination=pagination)

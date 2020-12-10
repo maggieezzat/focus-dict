@@ -78,7 +78,7 @@
                     {% for hit in res_word1['hits'] %}
                     <tr>
                     <th scope="row">{{ res_word1['SearchTerm'] }}</th>
-                    <td>{{ hit }}</td>
+                    <td>{{ hit[0] }} <span style="background-color: #FFFF00"> {{ hit[1] }}</span> {{ hit[2] }}</td>
                     </tr>
                     {% endfor %}
                     {% endif %}
@@ -92,8 +92,11 @@
             <div style="background:transparent !important" class="jumbotron">
                 <div style="font-family: 'Times New Roman'">        
                     <p>
-                    <center>
+                    <!--<center>
                     <font size="6" style="color:rgb(239,127,26);"> FOCUS DICTIONARY </font>
+                    </center>-->
+                    <center>
+                        <font size="6" style="color:rgb(239,127,26);"> {{ coll }} </font>
                     </center>
                     </p>
                 </div>
@@ -257,7 +260,7 @@
                     {% for hit in res_word2['hits'] %}
                     <tr>
                     <th scope="row">{{ res_word2['SearchTerm'] }}</th>
-                    <td>{{ hit }}</td>
+                    <td>{{ hit[0] }} <span style="background-color: #FFFF00"> {{ hit[1] }}</span> {{ hit[2] }}</td>
                     </tr>
                     {% endfor %}
                     {% endif %}
